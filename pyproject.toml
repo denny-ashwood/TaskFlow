@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "taskflow"
+version = "1.0.0"
+description = "A modern personal task management and scheduling application"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    {name = "TaskFlow Team"}
+]
+license = {text = "MIT"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business :: Scheduling",
+]
+
+dependencies = [
+    "PySide6>=6.6.0",
+    "SQLAlchemy>=2.0.0",
+    "APScheduler>=3.10.0",
+    "notify-py>=0.3.0",
+    "platformdirs>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-qt>=4.2.0",
+    "pytest-cov>=4.1.0",
+    "black>=24.0.0",
+    "isort>=5.13.0",
+    "flake8>=7.0.0",
+    "mypy>=1.8.0",
+    "pyinstaller>=6.0.0",
+]
+
+[project.scripts]
+taskflow = "taskflow.main:main"
+
+[tool.setuptools]
+package-dir = {"" = "."}
+packages = ["app", "app.config", "app.database", "app.models", "app.repositories", "app.services", "app.scheduler", "app.notifications", "app.ui", "app.widgets", "app.dialogs", "app.utils", "app.exceptions"]
+
+[tool.black]
+line-length = 100
+target-version = ['py312']
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --strict-markers"
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "ui: UI tests",
+]
