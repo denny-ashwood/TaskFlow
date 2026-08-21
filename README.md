@@ -2,7 +2,7 @@
 
 **Developer:** Denzell S'fisokuhle Yonah
 
-![TaskFlow Banner](banner.png)
+![TaskFlow Banner](banner.jpeg)
 
 <div align="center">
 
