@@ -88,7 +88,7 @@ TaskFlow is a modern, cross-platform desktop application for personal task manag
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/taskflow.git
+git clone https://github.com/denny-ashwood/taskflow.git
 cd taskflow
 
 # Create virtual environment (optional but recommended)
