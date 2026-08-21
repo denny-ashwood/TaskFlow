@@ -1,12 +1,11 @@
 """
-Task widget for displaying individual tasks.
+Task widget with Material Icons.
 """
 
 import logging
 from typing import Optional
 
-from PySide6.QtCore import Qt, Signal, QPoint
-from PySide6.QtGui import QColor, QAction, QContextMenuEvent
+from PySide6.QtCore import Qt, Signal, QPoint, QSize
 from PySide6.QtWidgets import (
     QCheckBox,
     QFrame,
@@ -20,6 +19,7 @@ from PySide6.QtWidgets import (
 
 from app.config.constants import PRIORITY_HIGH, PRIORITY_MEDIUM
 from app.models.task import Task
+from app.ui.material_icons import MaterialIcons
 
 logger = logging.getLogger(__name__)
 
@@ -27,10 +27,10 @@ logger = logging.getLogger(__name__)
 class TaskWidget(QFrame):
     """Widget for displaying a single task."""
 
-    completed = Signal(int)  # task_id
-    edit_requested = Signal(int)  # task_id
-    delete_requested = Signal(int)  # task_id
-    clicked = Signal(int)  # task_id
+    completed = Signal(int)
+    edit_requested = Signal(int)
+    delete_requested = Signal(int)
+    clicked = Signal(int)
 
     def __init__(
         self,
@@ -38,18 +38,10 @@ class TaskWidget(QFrame):
         show_checkbox: bool = True,
         parent: Optional[QWidget] = None,
     ) -> None:
-        """
-        Initialize task widget.
-
-        Args:
-            task: Task model instance
-            show_checkbox: Whether to show completion checkbox
-            parent: Parent widget
-        """
+        """Initialize task widget."""
         super().__init__(parent)
         self.task = task
         self.setObjectName("taskWidget")
-        self.setProperty("class", "task-widget")
         self.setCursor(Qt.PointingHandCursor)
 
         # Enable context menu
@@ -60,7 +52,6 @@ class TaskWidget(QFrame):
 
     def _setup_ui(self, show_checkbox: bool) -> None:
         """Setup widget UI."""
-        # Basic frame styling
         self.setStyleSheet("""
             #taskWidget {
                 background-color: white;
@@ -83,26 +74,6 @@ class TaskWidget(QFrame):
             self.checkbox.setChecked(self.task.is_completed)
             self.checkbox.setToolTip("Mark as completed")
             self.checkbox.setCursor(Qt.PointingHandCursor)
-            self.checkbox.setStyleSheet("""
-                QCheckBox {
-                    spacing: 0px;
-                }
-                QCheckBox::indicator {
-                    width: 18px;
-                    height: 18px;
-                    border-radius: 4px;
-                    border: 2px solid #cccccc;
-                    background: white;
-                }
-                QCheckBox::indicator:hover {
-                    border-color: #0050cb;
-                    background: #f0f6ff;
-                }
-                QCheckBox::indicator:checked {
-                    background-color: #0050cb;
-                    border-color: #0050cb;
-                }
-            """)
             self.checkbox.stateChanged.connect(self._on_checkbox_changed)
             layout.addWidget(self.checkbox, alignment=Qt.AlignTop)
 
@@ -110,139 +81,135 @@ class TaskWidget(QFrame):
         info_layout = QVBoxLayout()
         info_layout.setSpacing(2)
 
-        # Title
         self.title_label = QLabel(self.task.title)
-        self.title_label.setStyleSheet(
-            "font-weight: 600; font-size: 13px;"
-        )
+        self.title_label.setStyleSheet("font-weight: 600; font-size: 13px;")
         self.title_label.setWordWrap(True)
-        if self.task.is_completed:
-            self.title_label.setStyleSheet(
-                "font-weight: 600; font-size: 13px; "
-                "text-decoration: line-through; color: #888888;"
-            )
         info_layout.addWidget(self.title_label)
 
-        # Description (if exists) - limit to 1 line
         if self.task.description:
             description = self.task.description[:60]
-            if len(self.task.description) > 60:
-                description += "..."
             self.description_label = QLabel(description)
             self.description_label.setStyleSheet(
-                "font-size: 11px; color: gray;"
-            )
-            self.description_label.setWordWrap(False)
+                "font-size: 11px; color: gray;")
             info_layout.addWidget(self.description_label)
 
         layout.addLayout(info_layout, stretch=1)
 
-        # Right side info
-        right_layout = QVBoxLayout()
-        right_layout.setSpacing(2)
-        right_layout.setAlignment(Qt.AlignRight)
-
-        # Due time
+        # Right side info with Material Icons
         if self.task.due_time:
             time_str = self.task.due_time.strftime("%I:%M %p")
-            self.time_label = QLabel(f"🕐 {time_str}")
-            self.time_label.setStyleSheet(
-                "font-size: 11px; color: #666666;"
+            time_label = QLabel()
+            time_label.setPixmap(
+                MaterialIcons.create_pixmap('schedule', 14, "#666666")
             )
-            right_layout.addWidget(self.time_label)
+            time_text = QLabel(time_str)
+            time_text.setStyleSheet("font-size: 11px; color: #666666;")
 
-        # Priority badge
+            time_layout = QHBoxLayout()
+            time_layout.setSpacing(4)
+            time_layout.addWidget(time_label)
+            time_layout.addWidget(time_text)
+            layout.addLayout(time_layout)
+
+        # Priority with Material Icon
         priority_badge = self._create_priority_badge()
-        right_layout.addWidget(priority_badge, alignment=Qt.AlignRight)
+        layout.addWidget(priority_badge)
 
-        layout.addLayout(right_layout)
-
-        # Category badge (if exists)
+        # Category badge
         if self.task.category:
-            category_badge = QLabel(f"📁 {self.task.category.name}")
-            category_badge.setStyleSheet(
-                "background-color: #f0f0f0; "
-                "color: #666666; "
-                "border-radius: 4px; "
-                "padding: 2px 6px; "
-                "font-size: 10px;"
-            )
+            category_badge = self._create_category_badge()
             layout.addWidget(category_badge)
 
-        # More menu button (three dots)
-        self.menu_button = QPushButton("⋯")
-        self.menu_button.setFixedSize(24, 24)
+        # More menu button with Material Icon
+        self.menu_button = QPushButton()
+        self.menu_button.setFixedSize(28, 28)
         self.menu_button.setToolTip("More options")
-        self.menu_button.setCursor(Qt.PointingHandCursor)
-        self.menu_button.setStyleSheet("""
-            QPushButton {
-                border: none;
-                background: transparent;
-                font-size: 16px;
-                font-weight: bold;
-                color: #666666;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #f0f0f0;
-                color: #0050cb;
-            }
-        """)
+        self.menu_button.setIcon(
+            MaterialIcons.create_icon('more_vert', 20, "#666666")
+        )
+        self.menu_button.setIconSize(QSize(20, 20))
         self.menu_button.clicked.connect(self._show_menu)
         layout.addWidget(self.menu_button)
 
-    def _create_priority_badge(self) -> QLabel:
-        """Create priority badge label."""
-        badge = QLabel(self.task.priority.upper())
+    def _create_priority_badge(self) -> QWidget:
+        """Create priority badge with icon."""
+        badge_widget = QWidget()
+        badge_layout = QHBoxLayout(badge_widget)
+        badge_layout.setContentsMargins(4, 2, 4, 2)
+        badge_layout.setSpacing(2)
 
+        # Priority icon
+        icon_label = QLabel()
         if self.task.priority == PRIORITY_HIGH:
-            badge.setStyleSheet(
-                "background-color: #ffdad6; "
-                "color: #93000a; "
-                "border-radius: 4px; "
-                "padding: 1px 6px; "
-                "font-size: 10px; "
-                "font-weight: 600;"
+            icon_label.setPixmap(
+                MaterialIcons.create_pixmap('priority_high', 12, "#93000a")
+            )
+            badge_widget.setStyleSheet(
+                "background-color: #ffdad6; border-radius: 4px;"
             )
         elif self.task.priority == PRIORITY_MEDIUM:
-            badge.setStyleSheet(
-                "background-color: #fff3e0; "
-                "color: #a33200; "
-                "border-radius: 4px; "
-                "padding: 1px 6px; "
-                "font-size: 10px; "
-                "font-weight: 600;"
+            icon_label.setPixmap(
+                MaterialIcons.create_pixmap('flag', 12, "#a33200")
+            )
+            badge_widget.setStyleSheet(
+                "background-color: #fff3e0; border-radius: 4px;"
             )
         else:
-            badge.setStyleSheet(
-                "background-color: #e8f5e9; "
-                "color: #1b5e20; "
-                "border-radius: 4px; "
-                "padding: 1px 6px; "
-                "font-size: 10px; "
-                "font-weight: 600;"
+            icon_label.setPixmap(
+                MaterialIcons.create_pixmap('flag', 12, "#1b5e20")
+            )
+            badge_widget.setStyleSheet(
+                "background-color: #e8f5e9; border-radius: 4px;"
             )
 
-        return badge
+        badge_layout.addWidget(icon_label)
+
+        # Priority text
+        text_label = QLabel(self.task.priority.upper())
+        text_label.setStyleSheet("font-size: 10px; font-weight: 600;")
+        badge_layout.addWidget(text_label)
+
+        return badge_widget
+
+    def _create_category_badge(self) -> QWidget:
+        """Create category badge with icon."""
+        badge_widget = QWidget()
+        badge_layout = QHBoxLayout(badge_widget)
+        badge_layout.setContentsMargins(4, 2, 4, 2)
+        badge_layout.setSpacing(2)
+
+        # Folder icon
+        icon_label = QLabel()
+        icon_label.setPixmap(
+            MaterialIcons.create_pixmap('folder', 12, "#666666")
+        )
+        badge_layout.addWidget(icon_label)
+
+        # Category name
+        text_label = QLabel(self.task.category.name)
+        text_label.setStyleSheet("font-size: 10px; color: #666666;")
+        badge_layout.addWidget(text_label)
+
+        badge_widget.setStyleSheet(
+            "background-color: #f0f0f0; border-radius: 4px;"
+        )
+
+        return badge_widget
 
     def _on_checkbox_changed(self, state: int) -> None:
         """Handle checkbox state change."""
         if state == Qt.Checked:
-            logger.debug(f"Checkbox checked for task {self.task.id}")
             self.completed.emit(self.task.id)
-            # Visual feedback
             self.title_label.setStyleSheet(
                 "font-weight: 600; font-size: 13px; "
                 "text-decoration: line-through; color: #888888;"
             )
-        elif state == Qt.Unchecked:
-            logger.debug(f"Checkbox unchecked for task {self.task.id}")
 
     def _show_menu(self) -> None:
-        """Show context menu from three-dot button."""
-        self._create_and_show_menu(self.menu_button.mapToGlobal(
-            self.menu_button.rect().bottomLeft()
-        ))
+        """Show context menu."""
+        self._create_and_show_menu(
+            self.menu_button.mapToGlobal(self.menu_button.rect().bottomLeft())
+        )
 
     def _show_context_menu(self, pos: QPoint) -> None:
         """Show context menu on right-click."""
@@ -251,79 +218,35 @@ class TaskWidget(QFrame):
     def _create_and_show_menu(self, position) -> None:
         """Create and show context menu."""
         menu = QMenu(self)
-        menu.setStyleSheet("""
-            QMenu {
-                background-color: white;
-                border: 1px solid #e0e0e0;
-                border-radius: 8px;
-                padding: 4px;
-            }
-            QMenu::item {
-                padding: 8px 16px;
-                border-radius: 4px;
-            }
-            QMenu::item:selected {
-                background-color: #f0f6ff;
-                color: #0050cb;
-            }
-        """)
 
-        # Complete/Restore option
+        # Complete option with Material Icon
         if not self.task.is_completed:
-            complete_action = menu.addAction("✓ Mark Complete")
-            complete_action.triggered.connect(
-                lambda: self._handle_complete()
+            complete_action = menu.addAction(
+                MaterialIcons.create_icon('check_circle', 18, "#00a862"),
+                "Mark Complete"
             )
-        else:
-            restore_action = menu.addAction("↩ Restore Task")
+            complete_action.triggered.connect(
+                lambda: self.completed.emit(self.task.id)
+            )
 
         menu.addSeparator()
 
         # Edit option
-        edit_action = menu.addAction("✎ Edit")
+        edit_action = menu.addAction(
+            MaterialIcons.create_icon('edit', 18, "#0050cb"),
+            "Edit"
+        )
         edit_action.triggered.connect(
             lambda: self.edit_requested.emit(self.task.id)
         )
 
         # Delete option
-        delete_action = menu.addAction("🗑 Delete")
+        delete_action = menu.addAction(
+            MaterialIcons.create_icon('delete', 18, "#ba1a1a"),
+            "Delete"
+        )
         delete_action.triggered.connect(
             lambda: self.delete_requested.emit(self.task.id)
         )
 
-        # Show menu
         menu.exec(position)
-
-    def _handle_complete(self) -> None:
-        """Handle complete action from menu."""
-        if hasattr(self, 'checkbox'):
-            self.checkbox.setChecked(True)
-        self.completed.emit(self.task.id)
-
-    def mousePressEvent(self, event) -> None:
-        """Handle mouse press."""
-        if event.button() == Qt.LeftButton:
-            self.clicked.emit(self.task.id)
-        super().mousePressEvent(event)
-
-    def update_task(self, task: Task) -> None:
-        """Update widget with new task data."""
-        self.task = task
-        self.title_label.setText(task.title)
-
-        if hasattr(self, 'checkbox'):
-            # Block signals temporarily to avoid loops
-            self.checkbox.blockSignals(True)
-            self.checkbox.setChecked(task.is_completed)
-            self.checkbox.blockSignals(False)
-
-        # Update styles
-        if task.is_completed:
-            self.title_label.setStyleSheet(
-                "font-weight: 600; font-size: 13px; "
-                "text-decoration: line-through; color: #888888;"
-            )
-        else:
-            self.title_label.setStyleSheet(
-                "font-weight: 600; font-size: 13px;"
-            )
