@@ -1,19 +1,22 @@
 """
-Sidebar navigation widget.
+Sidebar navigation widget with Material Icons.
 """
 
 import logging
-from typing import List, Optional
+from typing import Optional
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QSize
 from PySide6.QtWidgets import (
     QButtonGroup,
     QFrame,
     QLabel,
     QPushButton,
     QVBoxLayout,
-    QWidget,
+    QHBoxLayout,
+    QWidget
 )
+
+from app.ui.material_icons import MaterialIcons, IconFactory
 
 logger = logging.getLogger(__name__)
 
@@ -21,15 +24,15 @@ logger = logging.getLogger(__name__)
 class Sidebar(QFrame):
     """Sidebar navigation widget."""
 
-    navigation_changed = Signal(str)  # view name
+    navigation_changed = Signal(str)
 
     NAV_ITEMS = [
-        ('dashboard', 'Dashboard', '📊'),
-        ('today', 'Today', '📅'),
-        ('upcoming', 'Upcoming', '📈'),
-        ('overdue', 'Overdue', '⚠️'),
-        ('completed', 'Completed', '✅'),
-        ('calendar', 'Calendar', '🗓️'),
+        ('dashboard', 'Dashboard', 'dashboard'),
+        ('today', 'Today', 'today'),
+        ('upcoming', 'Upcoming', 'upcoming'),
+        ('overdue', 'Overdue', 'overdue'),
+        ('completed', 'Completed', 'completed'),
+        ('calendar', 'Calendar', 'calendar'),
     ]
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -38,18 +41,17 @@ class Sidebar(QFrame):
         self.setObjectName("sidebar")
         self.setFixedWidth(220)
 
+        # Load Material Icons font
+        MaterialIcons.load_font()
+
         self._setup_ui()
 
     def _setup_ui(self) -> None:
         """Setup sidebar UI."""
-        # Set sidebar style
         self.setStyleSheet("""
             #sidebar {
                 background-color: #1a1a2e;
                 border-right: 1px solid #2a2a3e;
-            }
-            #sidebar QLabel {
-                color: #ffffff;
             }
             #sidebar QLabel#appTitle {
                 font-size: 20px;
@@ -89,25 +91,42 @@ class Sidebar(QFrame):
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(2)
 
-        # App title
-        title_label = QLabel("📋 TaskFlow")
-        title_label.setObjectName("appTitle")
-        layout.addWidget(title_label)
+        # App title with logo
+        title_layout = QHBoxLayout()
+        #app_logo = QLabel()
+        #app_logo.setPixmap(
+            #MaterialIcons.create_pixmap('check_circle', 24, "#0050cb")
+        #)
+        #title_layout.addWidget(app_logo)
 
-        # Navigation section label
+        title_label = QLabel("TaskFlow")
+        title_label.setObjectName("appTitle")
+        title_layout.addWidget(title_label)
+        title_layout.addStretch()
+
+        layout.addLayout(title_layout)
+
+        # Navigation section
         nav_label = QLabel("General")
         nav_label.setObjectName("sectionLabel")
         layout.addWidget(nav_label)
 
-        # Navigation buttons
+        # Navigation buttons with Material Icons
         self.button_group = QButtonGroup(self)
         self.button_group.setExclusive(True)
 
         self.nav_buttons = {}
-        for view_name, display_name, icon in self.NAV_ITEMS:
-            button = QPushButton(f"  {icon}  {display_name}")
+        for view_name, display_name, icon_name in self.NAV_ITEMS:
+            button = QPushButton(display_name)
             button.setCheckable(True)
             button.setProperty('view_name', view_name)
+
+            # Set Material Icon
+            button.setIcon(
+                IconFactory.for_sidebar(icon_name, 20)
+            )
+            button.setIconSize(QSize(20, 20))
+
             button.clicked.connect(
                 lambda checked, v=view_name: self.navigation_changed.emit(v)
             )
@@ -121,9 +140,13 @@ class Sidebar(QFrame):
         settings_label.setObjectName("sectionLabel")
         layout.addWidget(settings_label)
 
-        settings_button = QPushButton("  ⚙️  Settings")
+        settings_button = QPushButton("Settings")
         settings_button.setCheckable(True)
         settings_button.setProperty('view_name', 'settings')
+        settings_button.setIcon(
+            IconFactory.for_sidebar('settings', 20)
+        )
+        settings_button.setIconSize(QSize(20, 20))
         settings_button.clicked.connect(
             lambda: self.navigation_changed.emit('settings')
         )
@@ -133,7 +156,7 @@ class Sidebar(QFrame):
 
         layout.addStretch()
 
-        # User info at bottom
+        # User info
         user_frame = QFrame()
         user_frame.setStyleSheet("""
             QFrame {
@@ -151,7 +174,7 @@ class Sidebar(QFrame):
         user_layout.setContentsMargins(8, 8, 8, 8)
         user_layout.setSpacing(2)
 
-        user_name = QLabel("👤 S'fisokuhle")
+        user_name = QLabel("S'fisokuhle")
         user_name.setStyleSheet("font-weight: 600;")
         user_layout.addWidget(user_name)
 
