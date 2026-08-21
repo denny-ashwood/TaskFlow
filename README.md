@@ -2,7 +2,7 @@
 
 **Developer:** Denzell S'fisokuhle Yonah
 
-![TaskFlow Banner](https://via.placeholder.com/1200x400/1a1a2e/ffffff?text=TaskFlow+Desktop+Application)
+![TaskFlow Banner](banner.png)
 
 <div align="center">
 
